@@ -108,7 +108,7 @@ class MCQPaperGenerator {
       },
       options: {
         fontSize: 12,
-        labelWidth: 6,
+        labelWidth: 4,
         spacing: 1,
         pairSpacing: 6,
         lineHeight: 0.4,
@@ -147,7 +147,7 @@ class MCQPaperGenerator {
     this.loadFonts();
     this.initializePage();
     //this.totalQuestions = totalQuestions;
-    console.log("testDetails in constructor:", testDetails);
+    //console.log("testDetails in constructor:", testDetails);
   }
 
   private async loadFonts(): Promise<void> {
@@ -238,7 +238,7 @@ class MCQPaperGenerator {
     const { college, location, test } = this.config.header;
     const pageCenter = this.config.page.width / 2;
 
-    console.log("testDetails in drawMainHeader:", this.testDetails);
+    //console.log("testDetails in drawMainHeader:", this.testDetails);
     // College name
     this.setFont("stinger", "bold", college.fontSize);
     this.pdf.text(this.testDetails.collegeName, pageCenter, 15, {
@@ -552,6 +552,8 @@ class MCQPaperGenerator {
 
     this.checkAndAdjustPosition;
 
+    const startY = this.currentY;
+
     // Calculate heights and spaces
     const footerStart =
       this.config.page.height - this.config.page.margins.bottom - 5;
@@ -708,48 +710,59 @@ class MCQPaperGenerator {
   private getCurrentQuestionHeight(): number {
     const questionHeight = this.getQuestionTextHeight();
     const optionsHeight = this.getOptionsHeight();
-    // Increased spacing between questions
-    return questionHeight + optionsHeight + 12;
-  }
-
-  private checkAndAdjustPosition(): void {
+    // Check if this question will be at bottom of column
     const FOOTER_MARGIN = 5;
     const footerStart =
       this.config.page.height - this.config.page.margins.bottom - FOOTER_MARGIN;
+    const remainingHeight = footerStart - this.currentY;
+    const totalContentHeight = questionHeight + optionsHeight;
+
+    // If question barely fits at bottom, use smaller gap
+    if (
+      totalContentHeight <= remainingHeight &&
+      totalContentHeight + 12 > remainingHeight
+    ) {
+      return totalContentHeight + 1; // Use 2mm gap instead of 12mm
+    }
+
+    // Otherwise use normal gap
+    return totalContentHeight + 5;
+  }
+
+  private checkAndAdjustPosition(): void {
+    const footerStart =
+      this.config.page.height - this.config.page.margins.bottom - 0.5;
     const nextQuestionHeight = this.getCurrentQuestionHeight();
     const remainingHeight = footerStart - this.currentY;
 
-    // If question won't fit in current position
-    if (nextQuestionHeight > remainingHeight) {
-      // Always try to use remaining left column space first
-      if (this.currentSide === "right") {
-        const leftColumnY = this.currentY;
-        if (nextQuestionHeight <= remainingHeight) {
-          this.currentSide = "left";
-          this.currentY = leftColumnY;
-          return;
-        }
-      }
-
-      // If left column is full or question won't fit, then try right column
+    // Add buffer for more accurate space check
+    if (nextQuestionHeight > remainingHeight - 2) {
+      // 2mm buffer
       if (this.currentSide === "left") {
+        // Move to right column if enough space
         const rightColumnY = this.isFirstPage
           ? this.config.header.setInfoY + 15
           : this.config.page.margins.top + 15;
 
-        if (nextQuestionHeight <= footerStart - rightColumnY) {
+        if (nextQuestionHeight <= footerStart - rightColumnY - 2) {
           this.currentSide = "right";
           this.currentY = rightColumnY;
-          return;
+        } else {
+          // Not enough space in right, new page
+          this.pdf.addPage();
+          this.isFirstPage = false;
+          this.currentSide = "left";
+          this.initializePage();
+          this.currentY = this.config.page.margins.top + 15;
         }
+      } else {
+        // If in right column, always start new page
+        this.pdf.addPage();
+        this.isFirstPage = false;
+        this.currentSide = "left";
+        this.initializePage();
+        this.currentY = this.config.page.margins.top + 15;
       }
-
-      // If neither column has space, create new page
-      this.pdf.addPage();
-      this.isFirstPage = false;
-      this.currentSide = "left";
-      this.initializePage();
-      this.currentY = this.config.page.margins.top + 15;
     }
   }
 
@@ -807,7 +820,7 @@ export function generateMCQSets(
     String.fromCharCode(65 + i)
   );
 
-  console.log("testDetails in generateMCQSets:", testDetails);
+  //console.log("testDetails in generateMCQSets:", testDetails);
 
   const setData: SetData = {};
   const pdfs: Blob[] = [];
