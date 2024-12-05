@@ -40,6 +40,10 @@ interface GenerateOptions {
   answerCSV: boolean;
 }
 
+interface QuestionData {
+  questions: Question[];
+}
+
 const QuestionPreview = ({
   question,
   index,
@@ -85,16 +89,21 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
     answerCSV: true,
   });
 
-  const validateQuestions = (data: any): data is { questions: Question[] } => {
-    if (!Array.isArray(data?.questions)) return false;
-    return data.questions.every(
-      (q: any) =>
-        typeof q.question === "string" &&
-        Array.isArray(q.choices) &&
-        q.choices.every((c: any) => typeof c === "string") &&
-        typeof q.answer === "string" &&
-        q.choices.includes(q.answer)
-    );
+  const validateQuestions = (data: unknown): data is QuestionData => {
+    if (!data || typeof data !== "object") return false;
+    const questionData = data as QuestionData;
+    if (!Array.isArray(questionData?.questions)) return false;
+    return questionData.questions.every((q: unknown) => {
+      if (!q || typeof q !== "object") return false;
+      const question = q as Question;
+      return (
+        typeof question.question === "string" &&
+        Array.isArray(question.choices) &&
+        question.choices.every((c) => typeof c === "string") &&
+        typeof question.answer === "string" &&
+        question.choices.includes(question.answer)
+      );
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,7 +294,7 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
               max="26"
               value={numSets}
               onChange={(e) => setNumSets(Number(e.target.value))}
-              className="rounded-xl h-12 border-blue-200 focus:border-blue-400 text-lg"
+              className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-4"
             />
           </div>
 

@@ -550,22 +550,11 @@ class MCQPaperGenerator {
     this.currentQuestionText = questionText;
     this.currentOptions = options;
 
-    this.checkAndAdjustPosition;
-
-    const startY = this.currentY;
+    this.checkAndAdjustPosition();
 
     // Calculate heights and spaces
     const footerStart =
       this.config.page.height - this.config.page.margins.bottom - 5;
-
-    const questionTextHeight = this.measureText(
-      questionText,
-      this.getColumnWidth() - this.config.content.question.numberWidth
-    ).height;
-
-    const optionsSpacing = this.config.content.options.spacing;
-
-    const optionPairSpacing = this.config.content.options.pairSpacing;
 
     // Calculate total height needed
     const totalHeight = this.calculateTotalQuestionHeight(
@@ -577,7 +566,7 @@ class MCQPaperGenerator {
 
     const canFitInCurrentSpace = totalHeight <= currentSpaceRemaining;
 
-    // Position decision logic
+    // Position decision logi
     if (!canFitInCurrentSpace) {
       if (this.currentSide === "left") {
         const rightColumnY = this.isFirstPage

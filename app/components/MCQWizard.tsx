@@ -115,7 +115,7 @@ export default function MCQWizard() {
                       }))
                     }
                     placeholder="Enter your institution name"
-                    className="rounded-xl h-12 border-blue-200 focus:border-blue-400 text-lg"
+                    className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-2"
                   />
                 </div>
 
@@ -137,7 +137,7 @@ export default function MCQWizard() {
                       }))
                     }
                     placeholder="City, State"
-                    className="rounded-xl h-12 border-blue-200 focus:border-blue-400 text-lg"
+                    className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-2"
                   />
                 </div>
 
@@ -157,7 +157,7 @@ export default function MCQWizard() {
                         }))
                       }
                       placeholder="Monthly Test"
-                      className="rounded-xl h-12 border-blue-200 focus:border-blue-400 text-lg"
+                      className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-2"
                     />
                   </div>
 
@@ -179,7 +179,7 @@ export default function MCQWizard() {
                         }))
                       }
                       placeholder="01"
-                      className="rounded-xl h-12 border-blue-200 focus:border-blue-400 text-lg"
+                      className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-2"
                     />
                   </div>
                 </div>
