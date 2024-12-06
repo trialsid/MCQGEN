@@ -21,6 +21,7 @@ import {
   AlertCircle,
   FileCheck,
   Download,
+  Search,
 } from "lucide-react";
 import { TestDetails } from "../../lib/types/types";
 
@@ -44,39 +45,161 @@ interface QuestionData {
   questions: Question[];
 }
 
+interface SearchBarProps {
+  onSearch: (query: string) => void;
+}
+
+interface DragDropZoneProps {
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  status: "idle" | "loading" | "success" | "error";
+}
+
+const DragDropZone = ({ onUpload, status }: DragDropZoneProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  return (
+    <div
+      className={`relative group cursor-pointer border-3 border-dashed rounded-2xl p-12 transition-all duration-300 
+      bg-gradient-to-b from-blue-50/50 to-transparent hover:from-blue-100/50
+      ${isDragging ? "from-blue-100/70 scale-102" : ""}
+      ${
+        status === "success"
+          ? "border-green-400"
+          : status === "error"
+          ? "border-red-400"
+          : "border-blue-200 hover:border-blue-400"
+      }`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file)
+          onUpload({
+            target: { files: [file] },
+          } as unknown as React.ChangeEvent<HTMLInputElement>);
+      }}
+    >
+      <input
+        type="file"
+        className="absolute inset-0 opacity-0"
+        onChange={onUpload}
+        accept=".json"
+        id="file-upload"
+      />
+      <div className="text-center space-y-4">
+        <label htmlFor="file-upload" className="cursor-pointer">
+          <div
+            className={`w-20 h-20 mx-auto rounded-full bg-blue-100 flex items-center justify-center transition-transform duration-300
+            ${isDragging ? "scale-125" : "group-hover:scale-110"}`}
+          >
+            {status === "success" ? (
+              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            ) : status === "error" ? (
+              <AlertCircle className="w-10 h-10 text-red-600" />
+            ) : status === "loading" ? (
+              <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+            ) : (
+              <Upload className="w-10 h-10 text-blue-600" />
+            )}
+          </div>
+        </label>
+        <div className="space-y-2">
+          <p className="text-lg font-medium text-blue-900">
+            {status === "success"
+              ? "File uploaded successfully"
+              : status === "error"
+              ? "Upload failed - try again"
+              : status === "loading"
+              ? "Processing file..."
+              : "Drop your file here or click to browse"}
+          </p>
+          <p className="text-sm text-blue-600">Accepts JSON files only</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SearchBar = ({ onSearch }: SearchBarProps) => (
+  <div className="relative">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+    <Input
+      placeholder="Search questions..."
+      className="pl-10 h-12 rounded-xl"
+      onChange={(e) => onSearch(e.target.value)}
+    />
+  </div>
+);
+
+const highlightText = (text: string, query: string): JSX.Element => {
+  if (!query) return <>{text}</>;
+
+  const parts = text.split(new RegExp(`(${query})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span key={i} className="bg-yellow-200 rounded px-1">
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
 const QuestionPreview = ({
   question,
   index,
+  searchQuery = "",
 }: {
   question: Question;
   index: number;
+  searchQuery?: string;
 }) => (
-  <div className="p-6 bg-blue-50/50 rounded-2xl space-y-3 transform transition-all hover:scale-102">
-    <div className="flex items-start gap-3">
-      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center">
-        {index + 1}
-      </span>
-      <p className="text-blue-900 text-lg">{question.question}</p>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-11">
-      {question.choices.map((choice, idx) => (
-        <div
-          key={idx}
-          className={`p-3 rounded-xl ${
-            choice === question.answer
-              ? "bg-blue-100 text-blue-700 border-2 border-blue-200"
-              : "bg-white text-gray-600"
-          }`}
-        >
-          {String.fromCharCode(65 + idx)}. {choice}
+  <div className="group">
+    <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50/50 to-transparent transition-all duration-300 hover:translate-x-2">
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-blue-600 text-white font-medium flex items-center justify-center">
+          {index + 1}
         </div>
-      ))}
+        <div className="flex-grow space-y-4">
+          <p className="text-lg text-blue-900 font-medium">
+            {highlightText(question.question, searchQuery)}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {question.choices.map((choice, idx) => (
+              <div
+                key={idx}
+                className={`p-4 rounded-xl transition-all duration-300 ${
+                  choice === question.answer
+                    ? "bg-blue-100 text-blue-700 shadow-md transform hover:scale-102"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span className="font-medium mr-2">
+                  {String.fromCharCode(65 + idx)}.
+                </span>
+                {highlightText(choice, searchQuery)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 );
 
 export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [numSets, setNumSets] = useState(4);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,25 +208,23 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
   >("idle");
   const [generateOptions, setGenerateOptions] = useState<GenerateOptions>({
     questionPDFs: true,
-    answerPDFs: true,
-    answerCSV: true,
+    answerPDFs: false,
+    answerCSV: false,
   });
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const validateQuestions = (data: unknown): data is QuestionData => {
-    if (!data || typeof data !== "object") return false;
-    const questionData = data as QuestionData;
-    if (!Array.isArray(questionData?.questions)) return false;
-    return questionData.questions.every((q: unknown) => {
-      if (!q || typeof q !== "object") return false;
-      const question = q as Question;
-      return (
-        typeof question.question === "string" &&
-        Array.isArray(question.choices) &&
-        question.choices.every((c) => typeof c === "string") &&
-        typeof question.answer === "string" &&
-        question.choices.includes(question.answer)
-      );
-    });
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setFilteredQuestions(questions);
+      return;
+    }
+    const filtered = questions.filter(
+      (q) =>
+        q.question.toLowerCase().includes(query.toLowerCase()) ||
+        q.choices.some((c) => c.toLowerCase().includes(query.toLowerCase()))
+    );
+    setFilteredQuestions(filtered);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +242,7 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
       }
 
       setQuestions(data.questions);
+      setFilteredQuestions(data.questions);
       setUploadStatus("success");
     } catch (error) {
       console.error("Error loading questions:", error);
@@ -129,6 +251,23 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
       );
       setUploadStatus("error");
     }
+  };
+
+  const validateQuestions = (data: unknown): data is QuestionData => {
+    if (!data || typeof data !== "object") return false;
+    const questionData = data as QuestionData;
+    if (!Array.isArray(questionData?.questions)) return false;
+    return questionData.questions.every((q: unknown) => {
+      if (!q || typeof q !== "object") return false;
+      const question = q as Question;
+      return (
+        typeof question.question === "string" &&
+        Array.isArray(question.choices) &&
+        question.choices.every((c) => typeof c === "string") &&
+        typeof question.answer === "string" &&
+        question.choices.includes(question.answer)
+      );
+    });
   };
 
   const handleGenerate = async () => {
@@ -216,8 +355,8 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-3xl border-0 shadow-lg bg-white/80 backdrop-blur">
-        <CardHeader className="p-8">
+      <Card className="rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur">
+        <CardHeader className="p-8 border-b">
           <CardTitle className="text-2xl text-blue-900">
             Upload Questions
           </CardTitle>
@@ -235,67 +374,33 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
             </Alert>
           )}
 
-          <div className="space-y-4">
-            <Label className="text-blue-900 text-lg">
-              Question File (JSON)
-            </Label>
-            <div
-              className={`border-3 border-dashed rounded-2xl p-8 text-center transition-all duration-300 
-              ${
-                uploadStatus === "success"
-                  ? "border-green-400 bg-green-50"
-                  : uploadStatus === "error"
-                  ? "border-red-400 bg-red-50"
-                  : "border-blue-200 hover:border-blue-400"
-              }`}
-            >
-              {uploadStatus === "success" ? (
-                <CheckCircle2 className="h-12 w-12 mx-auto text-green-600 mb-4" />
-              ) : uploadStatus === "error" ? (
-                <AlertCircle className="h-12 w-12 mx-auto text-red-600 mb-4" />
-              ) : (
-                <Upload className="h-12 w-12 mx-auto text-blue-600 mb-4" />
-              )}
+          <DragDropZone onUpload={handleFileUpload} status={uploadStatus} />
 
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-              />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer text-lg block mb-2"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Label className="text-blue-900 text-lg">Number of Sets</Label>
+              <div
+                className="relative h-12"
+                onMouseEnter={() => (document.body.style.overflow = "hidden")}
+                onMouseLeave={() => (document.body.style.overflow = "auto")}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  if (e.deltaY < 0 && numSets < 26)
+                    setNumSets((prev) => prev + 1);
+                  if (e.deltaY > 0 && numSets > 1)
+                    setNumSets((prev) => prev - 1);
+                }}
               >
-                {uploadStatus === "success" ? (
-                  <span className="text-green-600">
-                    File uploaded successfully
-                  </span>
-                ) : uploadStatus === "error" ? (
-                  <span className="text-red-600">
-                    Upload failed - try again
-                  </span>
-                ) : (
-                  <span className="text-blue-600 hover:text-blue-700">
-                    Click to upload or drag and drop
-                  </span>
-                )}
-              </label>
-              <p className="text-sm text-gray-500">JSON files only</p>
+                <Input
+                  type="number"
+                  min="1"
+                  max="26"
+                  value={numSets}
+                  onChange={(e) => setNumSets(Number(e.target.value))}
+                  className="h-full rounded-xl bg-white text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-blue-900 text-lg">Number of Sets</Label>
-            <Input
-              type="number"
-              min="1"
-              max="26"
-              value={numSets}
-              onChange={(e) => setNumSets(Number(e.target.value))}
-              className="rounded-xl h-12 border-blue-200 focus:border-blue-400 focus:ring-blue-200 focus:outline-none text-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-4"
-            />
           </div>
 
           <div className="space-y-4">
@@ -379,7 +484,7 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
           <Button
             onClick={handleGenerate}
             disabled={loading || questions.length === 0}
-            className="w-full h-14 text-lg rounded-2xl bg-blue-600 hover:bg-blue-700 transform transition-all hover:scale-102 active:scale-98"
+            className="w-full h-14 text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
           >
             {loading ? (
               <>
@@ -411,22 +516,28 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
       </Card>
 
       {questions.length > 0 && (
-        <Card className="rounded-3xl border-0 shadow-lg bg-white/80 backdrop-blur">
-          <CardHeader className="p-8">
-            <CardTitle className="text-2xl text-blue-900">
-              Loaded Questions ({questions.length})
-            </CardTitle>
-            <CardDescription className="text-blue-600 text-lg">
-              Preview your uploaded questions and answers
-            </CardDescription>
+        <Card className="rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur">
+          <CardHeader className="p-8 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl text-blue-900">
+                  Loaded Questions ({filteredQuestions.length})
+                </CardTitle>
+                <CardDescription className="text-blue-600 text-lg">
+                  Preview and manage your questions
+                </CardDescription>
+              </div>
+              <SearchBar onSearch={handleSearch} />
+            </div>
           </CardHeader>
           <CardContent className="p-8">
             <div className="space-y-4">
-              {questions.map((question, index) => (
+              {filteredQuestions.map((question, index) => (
                 <QuestionPreview
                   key={index}
                   question={question}
                   index={index}
+                  searchQuery={searchQuery}
                 />
               ))}
             </div>
