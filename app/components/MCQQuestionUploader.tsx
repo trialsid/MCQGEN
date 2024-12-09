@@ -368,24 +368,16 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
         <CardContent className="p-8">
           <div className="grid grid-cols-2 gap-4">
             <Button
-              variant="custom"
+              variant={uploadMethod === "file" ? "default" : "outline"}
               onClick={() => setUploadMethod("file")}
-              className={`h-14 text-lg rounded-2xl transition-all duration-300 transform hover:scale-102 active:scale-98 ${
-                uploadMethod === "file"
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:from-blue-700 hover:to-blue-800"
-                  : "bg-white text-blue-600 border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-200"
-              }`}
+              className="h-14 text-lg rounded-2xl"
             >
               Upload JSON File
             </Button>
             <Button
-              variant="custom"
+              variant={uploadMethod === "ai" ? "default" : "outline"}
               onClick={() => setUploadMethod("ai")}
-              className={`h-14 text-lg rounded-2xl transition-all duration-300 transform hover:scale-102 active:scale-98 ${
-                uploadMethod === "ai"
-                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:from-blue-700 hover:to-blue-800"
-                  : "bg-white text-blue-600 border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-200"
-              }`}
+              className="h-14 text-lg rounded-2xl"
             >
               Generate with AI
             </Button>
