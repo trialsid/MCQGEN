@@ -24,6 +24,7 @@ import {
   Search,
 } from "lucide-react";
 import { TestDetails } from "../../lib/types/types";
+import AIQuestionGenerator from "./AIQuestionGenerator";
 
 interface Question {
   question: string;
@@ -212,6 +213,7 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
     answerCSV: false,
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadMethod, setUploadMethod] = useState<"file" | "ai">("file");
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -268,6 +270,12 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
         question.choices.includes(question.answer)
       );
     });
+  };
+
+  const handleQuestionsGenerated = (generatedQuestions: Question[]) => {
+    setQuestions(generatedQuestions);
+    setFilteredQuestions(generatedQuestions);
+    setUploadStatus("success");
   };
 
   const handleGenerate = async () => {
@@ -355,166 +363,204 @@ export default function MCQQuestionUploader({ testDetails }: MCQUploaderProps) {
 
   return (
     <div className="space-y-6">
+      {/* Method Selection */}
       <Card className="rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur">
-        <CardHeader className="p-8 border-b">
-          <CardTitle className="text-2xl text-blue-900">
-            Upload Questions
-          </CardTitle>
-          <CardDescription className="text-blue-600 text-lg">
-            Upload your questions and choose generation options
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-8 space-y-8">
-          {error && (
-            <Alert
-              variant="destructive"
-              className="bg-red-50 border-red-200 rounded-2xl"
+        <CardContent className="p-8">
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="custom"
+              onClick={() => setUploadMethod("file")}
+              className={`h-14 text-lg rounded-2xl transition-all duration-300 transform hover:scale-102 active:scale-98 ${
+                uploadMethod === "file"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:from-blue-700 hover:to-blue-800"
+                  : "bg-white text-blue-600 border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-200"
+              }`}
             >
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <DragDropZone onUpload={handleFileUpload} status={uploadStatus} />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <Label className="text-blue-900 text-lg">Number of Sets</Label>
-              <div
-                className="relative h-12"
-                onMouseEnter={() => (document.body.style.overflow = "hidden")}
-                onMouseLeave={() => (document.body.style.overflow = "auto")}
-                onWheel={(e) => {
-                  e.preventDefault();
-                  if (e.deltaY < 0 && numSets < 26)
-                    setNumSets((prev) => prev + 1);
-                  if (e.deltaY > 0 && numSets > 1)
-                    setNumSets((prev) => prev - 1);
-                }}
-              >
-                <Input
-                  type="number"
-                  min="1"
-                  max="26"
-                  value={numSets}
-                  onChange={(e) => setNumSets(Number(e.target.value))}
-                  className="h-full rounded-xl bg-white text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-blue-900 text-lg">Output Options</Label>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-6 w-6 text-blue-600" />
-                  <div>
-                    <h3 className="font-medium text-blue-900">
-                      Question Papers
-                    </h3>
-                    <p className="text-sm text-blue-600">
-                      Test papers without answers
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={generateOptions.questionPDFs}
-                  onChange={(e) =>
-                    setGenerateOptions((prev) => ({
-                      ...prev,
-                      questionPDFs: e.target.checked,
-                    }))
-                  }
-                  className="h-6 w-6 rounded-lg accent-blue-600"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <FileCheck className="h-6 w-6 text-blue-600" />
-                  <div>
-                    <h3 className="font-medium text-blue-900">Answer Papers</h3>
-                    <p className="text-sm text-blue-600">
-                      Test papers with answers marked
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={generateOptions.answerPDFs}
-                  onChange={(e) =>
-                    setGenerateOptions((prev) => ({
-                      ...prev,
-                      answerPDFs: e.target.checked,
-                    }))
-                  }
-                  className="h-6 w-6 rounded-lg accent-blue-600"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Download className="h-6 w-6 text-blue-600" />
-                  <div>
-                    <h3 className="font-medium text-blue-900">
-                      Answer Key CSV
-                    </h3>
-                    <p className="text-sm text-blue-600">
-                      Downloadable spreadsheet of correct answers
-                    </p>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={generateOptions.answerCSV}
-                  onChange={(e) =>
-                    setGenerateOptions((prev) => ({
-                      ...prev,
-                      answerCSV: e.target.checked,
-                    }))
-                  }
-                  className="h-6 w-6 rounded-lg accent-blue-600"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleGenerate}
-            disabled={loading || questions.length === 0}
-            className="w-full h-14 text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Generating Files...
-              </>
-            ) : (
-              <>
-                <FileText className="mr-2 h-5 w-5" />
-                Generate {numSets} {numSets === 1 ? "Set" : "Sets"}
-              </>
-            )}
-          </Button>
-
-          <div className="mt-4 text-sm text-gray-500">
-            <h3 className="font-medium mb-2">Instructions:</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Upload a JSON file containing your questions</li>
-              <li>
-                Format should be:{" "}
-                {`{ "questions": [{ "question": "...", "choices": ["A", "B", "C", "D"], "answer": "A" }] }`}
-              </li>
-              <li>Select the number of different sets to generate (max 26)</li>
-              <li>Choose which files you want to generate</li>
-              <li>Click Generate to create your selected files</li>
-            </ul>
+              Upload JSON File
+            </Button>
+            <Button
+              variant="custom"
+              onClick={() => setUploadMethod("ai")}
+              className={`h-14 text-lg rounded-2xl transition-all duration-300 transform hover:scale-102 active:scale-98 ${
+                uploadMethod === "ai"
+                  ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:from-blue-700 hover:to-blue-800"
+                  : "bg-white text-blue-600 border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-200"
+              }`}
+            >
+              Generate with AI
+            </Button>
           </div>
         </CardContent>
       </Card>
 
+      {/* Upload Method Content */}
+      {uploadMethod === "file" ? (
+        <Card className="rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur">
+          <CardHeader className="p-8 border-b">
+            <CardTitle className="text-2xl text-blue-900">
+              Upload Questions
+            </CardTitle>
+            <CardDescription className="text-blue-600 text-lg">
+              Upload your questions and choose generation options
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 space-y-8">
+            {error && (
+              <Alert
+                variant="destructive"
+                className="bg-red-50 border-red-200 rounded-2xl"
+              >
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <DragDropZone onUpload={handleFileUpload} status={uploadStatus} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <Label className="text-blue-900 text-lg">Number of Sets</Label>
+                <div
+                  className="relative h-12"
+                  onMouseEnter={() => (document.body.style.overflow = "hidden")}
+                  onMouseLeave={() => (document.body.style.overflow = "auto")}
+                  onWheel={(e) => {
+                    e.preventDefault();
+                    if (e.deltaY < 0 && numSets < 26)
+                      setNumSets((prev) => prev + 1);
+                    if (e.deltaY > 0 && numSets > 1)
+                      setNumSets((prev) => prev - 1);
+                  }}
+                >
+                  <Input
+                    type="number"
+                    min="1"
+                    max="26"
+                    value={numSets}
+                    onChange={(e) => setNumSets(Number(e.target.value))}
+                    className="h-full rounded-xl bg-white text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-blue-900 text-lg">Output Options</Label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                    <div>
+                      <h3 className="font-medium text-blue-900">
+                        Question Papers
+                      </h3>
+                      <p className="text-sm text-blue-600">
+                        Test papers without answers
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={generateOptions.questionPDFs}
+                    onChange={(e) =>
+                      setGenerateOptions((prev) => ({
+                        ...prev,
+                        questionPDFs: e.target.checked,
+                      }))
+                    }
+                    className="h-6 w-6 rounded-lg accent-blue-600"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileCheck className="h-6 w-6 text-blue-600" />
+                    <div>
+                      <h3 className="font-medium text-blue-900">
+                        Answer Papers
+                      </h3>
+                      <p className="text-sm text-blue-600">
+                        Test papers with answers marked
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={generateOptions.answerPDFs}
+                    onChange={(e) =>
+                      setGenerateOptions((prev) => ({
+                        ...prev,
+                        answerPDFs: e.target.checked,
+                      }))
+                    }
+                    className="h-6 w-6 rounded-lg accent-blue-600"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Download className="h-6 w-6 text-blue-600" />
+                    <div>
+                      <h3 className="font-medium text-blue-900">
+                        Answer Key CSV
+                      </h3>
+                      <p className="text-sm text-blue-600">
+                        Downloadable spreadsheet of correct answers
+                      </p>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={generateOptions.answerCSV}
+                    onChange={(e) =>
+                      setGenerateOptions((prev) => ({
+                        ...prev,
+                        answerCSV: e.target.checked,
+                      }))
+                    }
+                    className="h-6 w-6 rounded-lg accent-blue-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleGenerate}
+              disabled={loading || questions.length === 0}
+              className="w-full h-14 text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Generating Files...
+                </>
+              ) : (
+                <>
+                  <FileText className="mr-2 h-5 w-5" />
+                  Generate {numSets} {numSets === 1 ? "Set" : "Sets"}
+                </>
+              )}
+            </Button>
+
+            <div className="mt-4 text-sm text-gray-500">
+              <h3 className="font-medium mb-2">Instructions:</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Upload a JSON file containing your questions</li>
+                <li>
+                  Format should be:{" "}
+                  {`{ "questions": [{ "question": "...", "choices": ["A", "B", "C", "D"], "answer": "A" }] }`}
+                </li>
+                <li>
+                  Select the number of different sets to generate (max 26)
+                </li>
+                <li>Choose which files you want to generate</li>
+                <li>Click Generate to create your selected files</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <AIQuestionGenerator onQuestionsGenerated={handleQuestionsGenerated} />
+      )}
       {questions.length > 0 && (
         <Card className="rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur">
           <CardHeader className="p-8 border-b">
