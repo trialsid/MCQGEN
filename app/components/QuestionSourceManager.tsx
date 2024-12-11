@@ -10,14 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  FileText,
-  Loader2,
-  MoveUp,
-  MoveDown,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { FileText, Loader2, Search } from "lucide-react";
 import { Question, TestDetails } from "@/lib/types/types";
 import { generateMCQSets, generateCSVAnswerKey } from "@/lib/mcq/mcq-generator";
 

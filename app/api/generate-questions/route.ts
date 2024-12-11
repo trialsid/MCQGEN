@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   try {
     const { subject, grade, questionCount, customPrompt } = await req.json();
 
-    let prompt =
+    const prompt =
       customPrompt ||
       `Generate ${questionCount} multiple choice questions for ${grade} grade students about ${subject}. Each question should have exactly one correct answer.`;
 
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         headers: { "Content-Type": "application/json" },
         status: 200,
       });
-    } catch (parseError) {
+    } catch (error) {
       console.error("Error parsing AI response:", cleanResponse);
       return new Response(
         JSON.stringify({ error: "Failed to parse AI response" }),
