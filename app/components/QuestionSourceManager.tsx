@@ -14,6 +14,10 @@ import { FileText, Loader2, Search } from "lucide-react";
 import { Question, TestDetails } from "@/lib/types/types";
 import { generateMCQSets, generateCSVAnswerKey } from "@/lib/mcq/mcq-generator";
 
+type GenerationError = {
+  message: string;
+};
+
 interface QuestionSourceManagerProps {
   uploadedQuestions: Question[];
   generatedQuestions: Question[];
@@ -130,7 +134,7 @@ export default function QuestionSourceManager({
         URL.revokeObjectURL(csvUrl);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate files");
+      setError((err as Error | GenerationError).message || "An error occurred");
     } finally {
       setLoading(false);
     }

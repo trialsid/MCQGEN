@@ -74,7 +74,12 @@ export async function POST(req: Request) {
         status: 200,
       });
     } catch (error) {
-      console.error("Error parsing AI response:", cleanResponse);
+      console.error(
+        "Error parsing AI response:",
+        error,
+        "\nResponse:",
+        cleanResponse
+      );
       return new Response(
         JSON.stringify({ error: "Failed to parse AI response" }),
         {
